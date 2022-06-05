@@ -1,12 +1,8 @@
 const { SlippiGame } = require("@slippi/slippi-js");
 const  readlineSync = require('readline-sync');
 const fs = require ('fs');
-
-const gameInput = readlineSync.question( 'Please enter the location of your Slippi Replays: ');
-const gameFiles = fs.readdirSync( gameInput ).filter(file => file.endsWith('.slp'));
-
-const input = readlineSync.question("Enter your connect code: ");
-//console.log( input );
+const crypto = require('crypto');
+const pkgjson = require('./package.json');
 
 //For easy access of characters, since characters have IDs that are numbers
 const characters = ['Captain Falcon', 'Donkey Kong', 'Fox', 'Game & Watch', 'Kirby', 'Bowser', 'Link', 'Luigi', 'Mario', 'Marth',
@@ -28,10 +24,29 @@ const stages = [null, null, 'Fountain of Dreams', 'Pokemon Stadium', 'Peachs Cas
 //Acess to legal stages for wins table
 const legalStages = ['Fountain of Dreams', 'Pokemon Stadium', 'Yoshis Story', 'Dreamland', 'BattleField', 'Final Destination', 'Other Stages'];
 
+const version = pkgjson.version;
+const cachePath = './replayCache.json';
+
+console.log( `\x1b[38;2;0;255;255mSlippi Win Calculator\x1b[0m! V${version}`);
+console.log( "--------------------------------------------------------------" );
+console.log( "This script will scan the current folder and provide stats taken from all Slippi games in that folder." )
+console.log( "--------------------------------------------------------------" );
+
+const cache = loadCache(); //working on function
+
+
+// const gameInput = readlineSync.question( 'Please enter the location of your Slippi Replays: ');
+// Path should be changed to './' in the end I think. This will allow the user to use the app in the Slippi directory with no issues
+const gameInput = 'C:/Users/Michael Comatas/Documents/Slippi/';
+const gameFiles = fs.readdirSync( gameInput ).filter(file => file.endsWith('.slp'));
+
+const input = readlineSync.question("Enter your connect code: ");
+//console.log( input );
+
 var winsTable = createWinsTable();
 
-//var totalWins = 0;
-//var totalGames = 0;
+var totalWins = 0;
+var totalGames = 0;
 var invalidGames = 0;
 var playerIndex;
 var opponentIndex;
@@ -39,6 +54,19 @@ var opponentIndex;
 console.log( "Please wait for calculations to process, it may take awhile..." );
 console.log( "--------------------------------------------------------------" );
 
+//NEW WAY
+var i = 1;
+for ( const file of gameFiles )
+{
+    const game = getGameData( file ); //function WIP
+    if ( !game ) { continue; /*return;*/ }
+    cache.results[game.hash] = game; //hashs the game, stats, etc to the cache
+    const results = getResults( game ); //function WIP
+    //printResults
+    i++;
+}
+
+//OLD WAY TO GET GAME DATA
 for ( const file of gameFiles )
 {
     const game = new SlippiGame( gameInput + file );
@@ -101,8 +129,14 @@ for ( const file of gameFiles )
             {
                 if ( stats.stocks[i].playerIndex == playerIndex )
                 {   
+                    console.log( `${settings.players[playerIndex].connectCode} \x1b[38;2;0;255;0mwon\x1b[0m!` )
                     winsTable[characterIndex][stageIndex][0]++;
-                    //totalWins++;
+                    totalWins++;
+                    break;
+                }
+                else
+                {
+                    console.log( `${settings.players[playerIndex].connectCode} \x1b[38;2;255;0;0mlost\x1b[0m` );
                     break;
                 }
             }
@@ -112,11 +146,17 @@ for ( const file of gameFiles )
 
         winsTable[characterIndex][stageIndex][1]++;
         //winsTable[characterIndex][stageIndex][1]++;
-        //totalGames++;
+        totalGames++;
     }
 }
 
 printWins( winsTable );
+
+const totalWinPercentage = getWinPercentage( totalWins, totalGames );
+
+console.log( "--------------------------------------------------------------" );
+console.log( `\nTotal Wins: ${totalWins} | Total Games: ${totalGames} | Overall Win Percentage: ${totalWinPercentage}%`);
+console.log( "--------------------------------------------------------------" );
 
 //HELPER FUNCTIONS:
 
@@ -159,6 +199,38 @@ function createWinsTable() {
         }
     }
     return threeD;
+}
+
+//Loads the replay cache
+function loadCache() {
+    const info = fs.readFileSync( cachePath, 'utf-8' );
+    const data = JSON.stringify( info );
+    if ( !data )
+    {
+        console.log( 'No replay data was found. All scanned files will be cached for faster scans in the future.' );
+        return { results: {} };
+    }
+    return data;
+}
+
+function getGameData( file ) {
+    const hash = crypto.createHash('sha256').update( file );
+    //Check if it's in the cache already
+    if ( cache && cache.results[hash] )
+    {
+        return cache.results[hash];
+    }
+    var data = { hash }
+    const game = new SlippiGame( file );
+    data.settings = game.getSettings();
+    data.metadata = game.getMetadata();
+    data.stats = game.getStats();
+    data.gameSeconds =  Math.floor( ( metadata.lastFrame + 123 ) / 60 );
+    //const gameSeconds = Math.floor( (metadata.lastFrame + 123) / 60 );
+}
+
+function getResults() {
+
 }
 
 
