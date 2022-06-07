@@ -2,6 +2,7 @@ const { SlippiGame } = require("@slippi/slippi-js");
 const  readlineSync = require('readline-sync');
 const fs = require ('fs');
 const crypto = require('crypto');
+const path = require('path');
 const pkgjson = require('./package.json');
 
 //For easy access of characters, since characters have IDs that are numbers
@@ -40,7 +41,9 @@ const cache = loadCache(); //working on function
 const gameInput = 'C:/Users/Michael Comatas/Documents/Slippi/';
 const gameFiles = fs.readdirSync( gameInput ).filter(file => file.endsWith('.slp'));
 
-const input = readlineSync.question("Enter your connect code: ");
+// console.log( gameFiles );
+
+const input = readlineSync.question("Enter your connect code: ").toUpperCase();
 //console.log( input );
 
 var winsTable = createWinsTable();
@@ -55,19 +58,26 @@ console.log( "Please wait for calculations to process, it may take awhile..." );
 console.log( "--------------------------------------------------------------" );
 
 //NEW WAY
-var i = 1;
+//var i = 1;
 for ( const file of gameFiles )
 {
-    const game = getGameData( file ); //function WIP
+    const game = getGameData( gameInput + file ); //function WIP
+    // console.log( game );
     if ( !game ) { continue; /*return;*/ }
     cache.results[game.hash] = game; //hashs the game, stats, etc to the cache
-    const results = getResults( game ); //function WIP
+    //const results = getResults( game, winsTable ); //function WIP
+    getResults( game, winsTable, input );
     //printResults
-    i++;
+    //i++;
 }
 
+//Write to the cache
+fs.writeFileSync( cachePath, JSON.stringify({
+    results: cache.results
+}));
+
 //OLD WAY TO GET GAME DATA
-for ( const file of gameFiles )
+/* for ( const file of gameFiles )
 {
     const game = new SlippiGame( gameInput + file );
     
@@ -148,14 +158,14 @@ for ( const file of gameFiles )
         //winsTable[characterIndex][stageIndex][1]++;
         totalGames++;
     }
-}
+} */
 
 printWins( winsTable );
 
 const totalWinPercentage = getWinPercentage( totalWins, totalGames );
 
 console.log( "--------------------------------------------------------------" );
-console.log( `\nTotal Wins: ${totalWins} | Total Games: ${totalGames} | Overall Win Percentage: ${totalWinPercentage}%`);
+console.log( `Total Wins: ${totalWins} | Total Games: ${totalGames} | Overall Win Percentage: ${totalWinPercentage}%`);
 console.log( "--------------------------------------------------------------" );
 
 //HELPER FUNCTIONS:
@@ -203,19 +213,29 @@ function createWinsTable() {
 
 //Loads the replay cache
 function loadCache() {
-    const info = fs.readFileSync( cachePath, 'utf-8' );
-    const data = JSON.stringify( info );
-    if ( !data )
+    try
     {
-        console.log( 'No replay data was found. All scanned files will be cached for faster scans in the future.' );
+        const info = fs.readFileSync( cachePath, 'utf-8' );
+        const data = JSON.stringify( info );
+        if ( !data )
+        {
+            console.log( 'No replay data was found. All scanned files will be cached for faster scans in the future.' );
+            return { results: {} };
+        }
+        return data;
+    }
+    catch
+    {
+        console.log( 'No replay cache was found. Creating replay cache and scanning all files so future runs will finish faster.' );
         return { results: {} };
     }
-    return data;
 }
 
 function getGameData( file ) {
-    const hash = crypto.createHash('sha256').update( file );
+    const filename = path.basename( file );
+    const hash = crypto.createHash('sha256').update( filename ).digest('hex');
     //Check if it's in the cache already
+    //console.log( cache.results );
     if ( cache && cache.results[hash] )
     {
         return cache.results[hash];
@@ -224,19 +244,95 @@ function getGameData( file ) {
     const game = new SlippiGame( file );
     data.settings = game.getSettings();
     data.metadata = game.getMetadata();
+
+    /* if ( data.settings.players.length > 2 )
+    {
+        return data;
+    } */
+
     data.stats = game.getStats();
-    data.gameSeconds =  Math.floor( ( metadata.lastFrame + 123 ) / 60 );
+    data.gameSeconds =  Math.floor( ( data.metadata.lastFrame + 123 ) / 60 );
+
+    return data;
     //const gameSeconds = Math.floor( (metadata.lastFrame + 123) / 60 );
 }
 
-function getResults() {
+function getResults( game, winsTable, connectCode ) {
+    const { settings, metadata, stats, gameSeconds } = game;
 
+    if ( gameSeconds <= 60 )
+    {
+        console.log( 'Game is under 60 seconds. Game is ignored.' );
+        return;
+    }
+    if ( stats.overall[0].killCount == 0 && stats.overall[1].killCount == 0 )
+    {
+        console.log( 'Both players had 0 kills. Game is ignored.' );
+        return;
+    }
+    if  ( settings.players.length > 2 )
+    {
+        console.log( 'Is not a singles match. Game is ignored.' );
+        return;
+    }
+
+    if ( settings.players[0].connectCode == connectCode )
+    {
+        playerIndex = 0;
+        opponentIndex = 1;
+    }
+    else
+    {
+        playerIndex = 1;
+        opponentIndex = 0;
+    }
+
+    var stageIndex;
+    switch( settings.stageId )
+    {
+        case 2: //Fountain of Dreams
+            stageIndex = 0;
+            break;
+        case 3: //Pokemon Stadium
+            stageIndex = 1;
+            break;
+        case 8: //Yoshis Story
+            stageIndex = 2;
+            break;
+        case 28: //Dreamland
+            stageIndex = 3;
+            break;
+        case 31: //Battlefield
+            stageIndex = 4;
+            break;
+        case 32: //Final Destination
+            stageIndex = 5;
+            break;
+        default: //Other
+            stageIndex = 6;
+    }
+
+    var characterIndex = settings.players[opponentIndex].characterId; // Gets the character id / index of the opponent
+
+    for ( i = 0 ; i < stats.stocks.length; i++ )
+    {
+        if ( stats.stocks[i].deathAnimation == null )
+        {
+            if ( stats.stocks[i].playerIndex == playerIndex )
+            {
+                console.log( `${settings.players[playerIndex].connectCode} \x1b[38;2;0;255;0mwon\x1b[0m!` );
+                winsTable[characterIndex][stageIndex][0]++;
+                //totalWins++;
+                break;
+            }
+            else
+            {
+                console.log( `${settings.players[playerIndex].connectCode} \x1b[38;2;255;0;0mlost\x1b[0m` );
+                break;
+            }
+        }
+    }
+
+    winsTable[characterIndex][stageIndex][1]++;
+    totalGames++;
 }
-
-
-
-/* const endTypes = {
-    1: "TIME!",
-    2: "GAME!",
-    7: "No Contest",
-}; */
