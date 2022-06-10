@@ -1,3 +1,8 @@
+/* 
+Author: Michael Comatas
+Caching Implementation inspired by: https://github.com/BrodyVoth/slippi-cumulative-stats/blob/a53231f0a4968e01fc3662a5b2c44604aff4efb8/slippi-stats.js#L71
+*/
+
 const { SlippiGame } = require("@slippi/slippi-js");
 const  readlineSync = require('readline-sync');
 const fs = require ('fs');
@@ -28,17 +33,15 @@ const legalStages = ['Fountain of Dreams', 'Pokemon Stadium', 'Yoshis Story', 'D
 const version = pkgjson.version;
 const cachePath = './replayCache.json';
 
-console.log( `\x1b[38;2;0;255;255mSlippi Win Calculator\x1b[0m! V${version}`);
-console.log( "--------------------------------------------------------------" );
+console.log( `--------------- \x1b[38;2;0;255;255mSlippi Win Calculator\x1b[0m! V${version} ---------------`);
+console.log( "-------------------------------------------------------------" );
 console.log( "This script will scan the current folder and provide stats taken from all Slippi games in that folder." )
-console.log( "--------------------------------------------------------------" );
+console.log( "-------------------------------------------------------------" );
 
 const cache = loadCache(); //working on function
 
-
-// const gameInput = readlineSync.question( 'Please enter the location of your Slippi Replays: ');
 // Path should be changed to './' in the end I think. This will allow the user to use the app in the Slippi directory with no issues
-const gameInput = 'C:/Users/Michael Comatas/Documents/Slippi/';
+const gameInput = './';
 const gameFiles = fs.readdirSync( gameInput ).filter(file => file.endsWith('.slp'));
 
 // console.log( gameFiles );
@@ -54,18 +57,16 @@ var invalidGames = 0;
 var playerIndex;
 var opponentIndex;
 
-console.log( "Please wait for calculations to process, it may take awhile..." );
-console.log( "--------------------------------------------------------------" );
+//console.log( "Please wait for calculations to process, it may take awhile..." );
+//console.log( "--------------------------------------------------------------" );
 
 //NEW WAY
 //var i = 1;
 for ( const file of gameFiles )
 {
-    const game = getGameData( gameInput + file ); //function WIP
-    // console.log( game );
+    const game = getGameData( gameInput + file );
     if ( !game ) { continue; /*return;*/ }
     cache.results[game.hash] = game; //hashs the game, stats, etc to the cache
-    //const results = getResults( game, winsTable ); //function WIP
     getResults( game, winsTable, input );
     //printResults
     //i++;
@@ -76,104 +77,20 @@ fs.writeFileSync( cachePath, JSON.stringify({
     results: cache.results
 }));
 
-//OLD WAY TO GET GAME DATA
-/* for ( const file of gameFiles )
-{
-    const game = new SlippiGame( gameInput + file );
-    
-    const metadata = game.getMetadata();
-    const stats = game.getStats();
-    const gameSeconds = Math.floor( (metadata.lastFrame + 123) / 60 ); //Frame 0 starts with the timer, add the -123 where you can play before. Divide by 60 since 60 FPS
-    const settings = game.getSettings();
-    //console.log( "hello" );
-    //console.log( totalGames );
-    //console.log( invalidGames );
-    if ( gameSeconds <= 60 || (stats.overall[0].killCount == 0 && stats.overall[1].killCount == 0) || settings.players.length > 2 )
-    {
-        invalidGames++;
-    }
-    else
-    {
-        const settings = game.getSettings();
-        if ( settings.players[0].connectCode == input )
-        {
-            playerIndex = 0;
-            opponentIndex = 1;
-        }
-        else 
-        {
-            playerIndex = 1;
-            opponentIndex = 0;
-        }
-
-        var stageIndex;
-        switch( settings.stageId )
-        {
-            case 2: //Fountain of Dreams
-                stageIndex = 0;
-                break;
-            case 3: //Pokemon Stadium
-                stageIndex = 1;
-                break;
-            case 8: //Yoshis Story
-                stageIndex = 2;
-                break;
-            case 28: //Dreamland
-                stageIndex = 3;
-                break;
-            case 31: //Battlefield
-                stageIndex = 4;
-                break;
-            case 32: //Final Destination
-                stageIndex = 5;
-                break;
-            default: //Other
-                stageIndex = 6;
-
-        }
-        var characterIndex = settings.players[opponentIndex].characterId; // Get the character id / index of the opponent
-
-        for ( i = 0; i < stats.stocks.length; i++ )
-        {
-            if ( stats.stocks[i].deathAnimation == null )
-            {
-                if ( stats.stocks[i].playerIndex == playerIndex )
-                {   
-                    console.log( `${settings.players[playerIndex].connectCode} \x1b[38;2;0;255;0mwon\x1b[0m!` )
-                    winsTable[characterIndex][stageIndex][0]++;
-                    totalWins++;
-                    break;
-                }
-                else
-                {
-                    console.log( `${settings.players[playerIndex].connectCode} \x1b[38;2;255;0;0mlost\x1b[0m` );
-                    break;
-                }
-            }
-        }
-        // console.log( characterIndex );
-        // console.log( stageIndex );
-
-        winsTable[characterIndex][stageIndex][1]++;
-        //winsTable[characterIndex][stageIndex][1]++;
-        totalGames++;
-    }
-} */
-
 printWins( winsTable );
 
 const totalWinPercentage = getWinPercentage( totalWins, totalGames );
 
-console.log( "--------------------------------------------------------------" );
-console.log( `Total Wins: ${totalWins} | Total Games: ${totalGames} | Overall Win Percentage: ${totalWinPercentage}%`);
-console.log( "--------------------------------------------------------------" );
+console.log( "-------------------------------------------------------------" );
+console.log( `Total Wins: ${totalWins} | Total Games: ${totalGames} | Overall Win Percentage: \x1b[38;2;0;255;255;0m${totalWinPercentage}%\x1b[0m`);
+console.log( "-------------------------------------------------------------" );
 
-//HELPER FUNCTIONS:
+//HELPER FUNCTIONS: --------------------------------------------------------------------------------------------------------------------------------
 
 function printWins( winsTable ) {
     for ( var i = 0; i < winsTable.length; i++ )
     {
-        console.log( "--------------------------------------------------------------" );
+        console.log( "-------------------------------------------------------------" );
         console.log( `Against ${characters[i]}: `);
         for ( var j = 0; j < winsTable[i].length; j++ )
         {
@@ -216,7 +133,7 @@ function loadCache() {
     try
     {
         const info = fs.readFileSync( cachePath, 'utf-8' );
-        const data = JSON.stringify( info );
+        const data = JSON.parse( info );
         if ( !data )
         {
             console.log( 'No replay data was found. All scanned files will be cached for faster scans in the future.' );
@@ -235,12 +152,11 @@ function getGameData( file ) {
     const filename = path.basename( file );
     const hash = crypto.createHash('sha256').update( filename ).digest('hex');
     //Check if it's in the cache already
-    //console.log( cache.results );
     if ( cache && cache.results[hash] )
     {
         return cache.results[hash];
     }
-    var data = { hash }
+    let data = { hash }
     const game = new SlippiGame( file );
     data.settings = game.getSettings();
     data.metadata = game.getMetadata();
@@ -254,10 +170,9 @@ function getGameData( file ) {
     data.gameSeconds =  Math.floor( ( data.metadata.lastFrame + 123 ) / 60 );
 
     return data;
-    //const gameSeconds = Math.floor( (metadata.lastFrame + 123) / 60 );
 }
 
-function getResults( game, winsTable, connectCode ) {
+function getResults( game, winsTable, connectCode, i ) {
     const { settings, metadata, stats, gameSeconds } = game;
 
     if ( gameSeconds <= 60 )
@@ -322,7 +237,7 @@ function getResults( game, winsTable, connectCode ) {
             {
                 console.log( `${settings.players[playerIndex].connectCode} \x1b[38;2;0;255;0mwon\x1b[0m!` );
                 winsTable[characterIndex][stageIndex][0]++;
-                //totalWins++;
+                totalWins++;
                 break;
             }
             else
@@ -336,3 +251,5 @@ function getResults( game, winsTable, connectCode ) {
     winsTable[characterIndex][stageIndex][1]++;
     totalGames++;
 }
+
+process.stdin.resume();

@@ -3,3 +3,7 @@ node_modules/
 yarn.lock
 random.txt
 replayCache.json
+matchupWins-linux
+matchupWins-macos
+matchupWins-win.exe
+matchupWins-win.rar
