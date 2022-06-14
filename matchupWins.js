@@ -41,7 +41,8 @@ console.log( "-------------------------------------------------------------" );
 const cache = loadCache(); //working on function
 
 // Path should be changed to './' in the end I think. This will allow the user to use the app in the Slippi directory with no issues
-const gameInput = './';
+//const gameInput = './';
+const gameInput = 'C:/Users/Michael Comatas/Documents/Slippi/';
 const gameFiles = fs.readdirSync( gameInput ).filter(file => file.endsWith('.slp'));
 
 // console.log( gameFiles );
@@ -61,15 +62,16 @@ var opponentIndex;
 //console.log( "--------------------------------------------------------------" );
 
 //NEW WAY
-//var i = 1;
+var j = 1;
 for ( const file of gameFiles )
 {
     const game = getGameData( gameInput + file );
     if ( !game ) { continue; /*return;*/ }
     cache.results[game.hash] = game; //hashs the game, stats, etc to the cache
-    getResults( game, winsTable, input );
+    //console.log( `${i}: ` );
+    getResults( game, winsTable, input, j );
     //printResults
-    //i++;
+    j++;
 }
 
 //Write to the cache
@@ -172,22 +174,21 @@ function getGameData( file ) {
     return data;
 }
 
-function getResults( game, winsTable, connectCode, i ) {
+function getResults( game, winsTable, connectCode, j ) {
     const { settings, metadata, stats, gameSeconds } = game;
-
-    if ( gameSeconds <= 60 )
+    if ( gameSeconds <= 45 )
     {
-        console.log( 'Game is under 60 seconds. Game is ignored.' );
+        console.log( `${j}: Game is under 45 seconds. Game is ignored.` );
         return;
     }
     if ( stats.overall[0].killCount == 0 && stats.overall[1].killCount == 0 )
     {
-        console.log( 'Both players had 0 kills. Game is ignored.' );
+        console.log( `${j}: Both players had 0 kills. Game is ignored.` );
         return;
     }
     if  ( settings.players.length > 2 )
     {
-        console.log( 'Is not a singles match. Game is ignored.' );
+        console.log( `${j}: Is not a singles match. Game is ignored.` );
         return;
     }
 
@@ -235,14 +236,14 @@ function getResults( game, winsTable, connectCode, i ) {
         {
             if ( stats.stocks[i].playerIndex == playerIndex )
             {
-                console.log( `${settings.players[playerIndex].connectCode} \x1b[38;2;0;255;0mwon\x1b[0m!` );
+                console.log( `${j}: ${settings.players[playerIndex].connectCode} (${characters[settings.players[playerIndex].characterId]}) \x1b[38;2;0;255;0mwon\x1b[0m vs ${settings.players[opponentIndex].connectCode} (${characters[settings.players[opponentIndex].characterId]})!` );
                 winsTable[characterIndex][stageIndex][0]++;
                 totalWins++;
                 break;
             }
             else
             {
-                console.log( `${settings.players[playerIndex].connectCode} \x1b[38;2;255;0;0mlost\x1b[0m` );
+                console.log( `${j}: ${settings.players[playerIndex].connectCode} (${characters[settings.players[playerIndex].characterId]}) \x1b[38;2;255;0;0mlost\x1b[0m vs ${settings.players[opponentIndex].connectCode} (${characters[settings.players[opponentIndex].characterId]})` );
                 break;
             }
         }
