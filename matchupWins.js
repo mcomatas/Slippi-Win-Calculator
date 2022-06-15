@@ -16,6 +16,11 @@ const characters = ['Captain Falcon', 'Donkey Kong', 'Fox', 'Game & Watch', 'Kir
                     'Young Link', 'Dr. Mario', 'Roy', 'Pichu', 'Ganondorf', 'Master Hand', 'Wireframe Male', 'Wireframe Female',
                     'Giga Bowser', 'Crazy Hand', 'Sandbag', 'Popo'];
 
+const charactersLow = ['captain falcon', 'donkey kong', 'fox', 'game & watch', 'kirby', 'bowser', 'link', 'luigi', 'mario', 'marth',
+                        'mewtwo', 'ness', 'peach', 'pikachu', 'ice climbers', 'jigglypuff', 'samus', 'yoshi', 'zelda', 'shiek', 'falco',
+                        'young link', 'dr. mario', 'roy', 'pichu', 'ganondorf', 'master hand', 'wireframe male', 'wireframe female',
+                        'giga bowser', 'crazy Hand', 'sandbag', 'popo'];
+
 //Have access to stages
 const stages = [null, null, 'Fountain of Dreams', 'Pokemon Stadium', 'Peachs Castle', 'Kongo Jungle', 'Brinstar', 'Corneria', 'Yoshis Story',
                 'Onett', 'Mute City', 'Rainbow Cruise', 'Jungle Japes', 'Great Bay', 'Hyrule Temple', 'Brinstar Depths', 'Yoshis Island', 
@@ -59,6 +64,8 @@ else
     input = readlineSync.question( 'Enter your connect code: ' );
 }
 //console.log( input );
+
+const opponentInput = readlineSync.question( 'Enter the connect code of your opponent (leave blank for all opponent): ' );
 
 var winsTable = createWinsTable();
 
@@ -212,6 +219,12 @@ function getResults( game, winsTable, connectCode, j ) {
     {
         playerIndex = 1;
         opponentIndex = 0;
+    }
+
+    if( opponentInput && settings.players[opponentIndex].connectCode != opponentInput )
+    {
+        console.log( `${j}: Game is not against specified opponent. Game is ignored.` );
+        return;
     }
 
     var stageIndex;
