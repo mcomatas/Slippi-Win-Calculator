@@ -47,7 +47,17 @@ const gameFiles = fs.readdirSync( gameInput ).filter(file => file.endsWith('.slp
 
 // console.log( gameFiles );
 
-const input = readlineSync.question("Enter your connect code: ").toUpperCase();
+//const input = readlineSync.question("Enter your connect code: ").toUpperCase();
+var input;
+if( cache && cache.connectCode )
+{
+    input = readlineSync.question( `Enter your connect code (leave blank to keep it ${cache.connectCode}): `);
+    input = cache.connectCode;
+}
+else
+{
+    input = readlineSync.question( 'Enter your connect code: ' );
+}
 //console.log( input );
 
 var winsTable = createWinsTable();
@@ -76,6 +86,7 @@ for ( const file of gameFiles )
 
 //Write to the cache
 fs.writeFileSync( cachePath, JSON.stringify({
+    connectCode: input,
     results: cache.results
 }));
 
