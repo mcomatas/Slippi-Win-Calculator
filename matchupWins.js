@@ -43,27 +43,21 @@ console.log( "-------------------------------------------------------------" );
 console.log( "This script will scan the current folder and provide stats taken from all Slippi games in that folder." )
 console.log( "-------------------------------------------------------------" );
 
-const cache = loadCache(); //working on function
+const cache = loadCache();
 
-// Path should be changed to './' in the end I think. This will allow the user to use the app in the Slippi directory with no issues
 //const gameInput = './';
 const gameInput = 'C:/Users/Michael Comatas/Documents/Slippi/';
 const gameFiles = fs.readdirSync( gameInput ).filter(file => file.endsWith('.slp'));
 
-// console.log( gameFiles );
-
-//const input = readlineSync.question("Enter your connect code: ").toUpperCase();
 var input;
 if( cache && cache.connectCode )
 {
-    input = readlineSync.question( `Enter your connect code (leave blank to keep it ${cache.connectCode}): `);
-    input = cache.connectCode;
+    input = readlineSync.question( `Enter your connect code (leave blank to keep it ${cache.connectCode}): `) || cache.connectCode;
 }
 else
 {
     input = readlineSync.question( 'Enter your connect code: ' );
 }
-//console.log( input );
 
 const opponentInput = readlineSync.question( 'Enter the connect code of your opponent (leave blank for all opponent): ' );
 
@@ -81,19 +75,13 @@ var invalidGames = 0;
 var playerIndex;
 var opponentIndex;
 
-//console.log( "Please wait for calculations to process, it may take awhile..." );
-//console.log( "--------------------------------------------------------------" );
-
-//NEW WAY
 var j = 1;
 for ( const file of gameFiles )
 {
     const game = getGameData( gameInput + file );
     if ( !game ) { continue; /*return;*/ }
     cache.results[game.hash] = game; //hashs the game, stats, etc to the cache
-    //console.log( `${i}: ` );
     getResults( game, winsTable, input, j );
-    //printResults
     j++;
 }
 
@@ -188,14 +176,7 @@ function getGameData( file ) {
     const game = new SlippiGame( file );
     data.settings = game.getSettings();
     data.metadata = game.getMetadata();
-
-    /* if ( data.settings.players.length > 2 )
-    {
-        return data;
-    } */
-
     data.stats = game.getStats();
-    // data.gameSeconds =  Math.floor( ( data.metadata.lastFrame + 123 ) / 60 );
 
     return data;
 }

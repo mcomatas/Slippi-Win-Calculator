@@ -1,6 +1,6 @@
 {
   "name": "slippi-win-calculator",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "A script to get wins and win percentage on each stage against each character.",
   "author": "Michael Comatas",
   "dependencies": {
