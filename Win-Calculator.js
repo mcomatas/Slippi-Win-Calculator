@@ -45,8 +45,7 @@ console.log( "-------------------------------------------------------------" );
 
 const cache = loadCache();
 
-//const gameInput = './';
-const gameInput = 'C:/Users/Michael Comatas/Documents/Slippi/';
+const gameInput = './';
 const gameFiles = fs.readdirSync( gameInput ).filter(file => file.endsWith('.slp'));
 
 var input;
