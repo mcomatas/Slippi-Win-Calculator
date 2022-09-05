@@ -41,6 +41,7 @@ const cachePath = './replayCache.json';
 console.log( `--------------- \x1b[38;2;0;255;255mSlippi Win Calculator\x1b[0m! V${version} ---------------`);
 console.log( "-------------------------------------------------------------" );
 console.log( "This script will scan the current folder and provide stats taken from all Slippi games in that folder." )
+console.log( "You also have the option to write a csv file of the data.")
 console.log( "-------------------------------------------------------------" );
 
 const cache = loadCache();
@@ -65,6 +66,8 @@ const charID = charactersLow.indexOf( charInput );
 
 const opponentCharInput = checkChar( readlineSync.question( 'Enter your opponents character (leave blank for all characters): ' ) ) || false;
 const oppCharID = charactersLow.indexOf( opponentCharInput );
+
+const csvInput = readlineSync.keyInYNStrict( 'Do you want to write a csv file of the data?' );
 
 var winsTable = createWinsTable();
 
@@ -91,6 +94,11 @@ fs.writeFileSync( cachePath, JSON.stringify({
 }));
 
 printWins( winsTable );
+
+if( csvInput )
+{
+    writeCSV( winsTable );
+}
 
 const totalWinPercentage = getWinPercentage( totalWins, totalGames );
 
@@ -296,4 +304,26 @@ function checkChar( char )
         arg = readlineSync.question( 'Please enter a valid character (or leave blank for all characters): ' ).toLowerCase() || false;
     }
     return arg;
+}
+
+function writeCSV( winsTable )
+{
+    let csvContent = "";
+    let row = "Opponent-Character,Stage,Wins,Total-Games,Win-Percentage";
+    csvContent += row + "\r\n";
+
+    for( let i = 0; i < winsTable.length; i++ )
+    {
+        for( let j = 0; j < winsTable[i].length; j++ )
+        {
+            let winP = getWinPercentage( winsTable[i][j][0], winsTable[i][j][1] );
+            let row = `${characters[i]},${legalStages[j]},${winsTable[i][j][0]},${winsTable[i][j][1]},${winP}`;
+            csvContent += row + "\r\n";
+        }
+    }
+   
+    const d = new Date();
+    let time = d.getTime();
+    let csvFilePath = 'Slippi-Games-CSV-' + time + '.csv';
+    fs.writeFileSync( csvFilePath, csvContent );
 }
