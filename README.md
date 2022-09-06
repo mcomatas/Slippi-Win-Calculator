@@ -21,5 +21,5 @@ In version 1.6.0 the user is prompted if they want to write a CSV file of the da
 ![Example5](https://i.imgur.com/d1j4um7.png)
 
 How the data looks once it is imported from the CSV file into a Google sheets document:
-[!Example6](https://i.imgur.com/aTGRFyC.png)
+![Example6](https://i.imgur.com/aTGRFyC.png)
 
