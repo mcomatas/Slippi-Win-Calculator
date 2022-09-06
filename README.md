@@ -16,3 +16,10 @@ Once the application is finished running it gives an output like this for every 
 
 In addition it also gives the output of total wins, total games, and overall win percantage:
 ![Example4](https://i.imgur.com/mITv1oY.png)
+
+In version 1.6.0 the user is prompted if they want to write a CSV file of the data, this way they can import it for better visiualization of the data:
+![Example5](https://i.imgur.com/d1j4um7.png)
+
+How the data looks once it is imported from the CSV file into a Google sheets document:
+[!Example6](https://i.imgur.com/aTGRFyC.png)
+
